@@ -1,11 +1,15 @@
 import argparse
 import base64
 import json
+import os
 import sys
 import time
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+
+DEFAULT_ENDPOINT_ID = "i2pgt8jfdmk2sn"
 
 
 def post_json(url, api_key, payload, timeout):
@@ -46,8 +50,21 @@ def save_images(result, output_dir):
 
 def main():
     parser = argparse.ArgumentParser(description="Test a deployed RunPod Krea 2 worker.")
-    parser.add_argument("--endpoint-id", required=True, help="RunPod endpoint ID.")
-    parser.add_argument("--api-key", required=True, help="RunPod API key.")
+    parser.add_argument(
+        "--endpoint-id",
+        default=os.environ.get("RUNPOD_ENDPOINT_ID", DEFAULT_ENDPOINT_ID),
+        help=f"RunPod endpoint ID (default: {DEFAULT_ENDPOINT_ID}).",
+    )
+    parser.add_argument(
+        "--api-key",
+        default=os.environ.get("RUNPOD_API_KEY"),
+        help="RunPod API key. Defaults to $RUNPOD_API_KEY.",
+    )
+    parser.add_argument(
+        "--health-check",
+        action="store_true",
+        help="Check worker and checkpoint status without generating an image.",
+    )
     parser.add_argument("--prompt", default="a fox walking in the snow")
     parser.add_argument("--checkpoint", default="oss_turbo", choices=["oss_raw", "oss_turbo"])
     parser.add_argument("--width", type=int, default=1024)
@@ -65,6 +82,23 @@ def main():
         help="Submit with /run and poll /status instead of using /runsync.",
     )
     args = parser.parse_args()
+    if not args.api_key:
+        parser.error("set RUNPOD_API_KEY or pass --api-key")
+
+    base_url = f"https://api.runpod.ai/v2/{args.endpoint_id}"
+    if args.health_check:
+        try:
+            result = post_json(
+                f"{base_url}/runsync",
+                args.api_key,
+                {"input": {"health_check": True}},
+                timeout=args.timeout,
+            )
+        except (HTTPError, URLError, TimeoutError) as exc:
+            print(f"request failed: {exc}", file=sys.stderr)
+            return 1
+        print(json.dumps(result, indent=2))
+        return 0
 
     request_input = {
         "prompt": args.prompt,
@@ -80,7 +114,6 @@ def main():
     if args.cfg is not None:
         request_input["cfg"] = args.cfg
 
-    base_url = f"https://api.runpod.ai/v2/{args.endpoint_id}"
     try:
         if args.async_job:
             submitted = post_json(

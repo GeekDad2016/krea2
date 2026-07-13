@@ -3,4 +3,5 @@
 __pycache__/
 *.pyc
 .hf_home
+runpod_outputs/
 .DS_Store

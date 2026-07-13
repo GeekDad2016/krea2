@@ -138,11 +138,13 @@ The worker accepts this input shape:
 After deployment, test the endpoint and save the returned PNG:
 
 ```bash
-python test_runpod_worker.py \
-  --endpoint-id YOUR_ENDPOINT_ID \
-  --api-key YOUR_RUNPOD_API_KEY \
-  --prompt "a fox walking in the snow"
+export RUNPOD_API_KEY=YOUR_RUNPOD_API_KEY
+python test_runpod_worker.py --health-check
+python test_runpod_worker.py --async --prompt "a fox walking in the snow"
 ```
+
+The test client defaults to the configured endpoint ID and saves generated
+images under `runpod_outputs/`. Use `--endpoint-id` to target a different endpoint.
 
 
 ## Finetuning Krea 2
