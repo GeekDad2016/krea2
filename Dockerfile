@@ -15,7 +15,7 @@ RUN apt-get update \
         ca-certificates \
         git \
         libgl1 \
-        libglib2.0-0t64 \
+        libglib2.0-0 \
         python3 \
         python3-pip \
         python3-venv \
