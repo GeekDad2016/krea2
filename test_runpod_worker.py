@@ -49,6 +49,7 @@ def save_images(result, output_dir):
 
 
 def main():
+    env_api_key = os.environ.get("RUNPOD_API_KEY")
     parser = argparse.ArgumentParser(description="Test a deployed RunPod Krea 2 worker.")
     parser.add_argument(
         "--endpoint-id",
@@ -57,7 +58,7 @@ def main():
     )
     parser.add_argument(
         "--api-key",
-        default=os.environ.get("RUNPOD_API_KEY"),
+        default=env_api_key,
         help="RunPod API key. Defaults to $RUNPOD_API_KEY.",
     )
     parser.add_argument(
@@ -84,6 +85,10 @@ def main():
     args = parser.parse_args()
     if not args.api_key:
         parser.error("set RUNPOD_API_KEY or pass --api-key")
+    if env_api_key:
+        print(f"RUNPOD_API_KEY loaded from environment (ends with {env_api_key[-4:]})")
+    else:
+        print("RUNPOD_API_KEY is not set; using the --api-key argument")
 
     base_url = f"https://api.runpod.ai/v2/{args.endpoint_id}"
     if args.health_check:
