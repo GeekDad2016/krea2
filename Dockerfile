@@ -3,7 +3,8 @@ FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    HF_HOME=/root/.cache/huggingface
+    HF_HOME=/root/.cache/huggingface \
+    PYTHONPATH=/app
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -27,4 +28,4 @@ RUN python -m pip install --upgrade pip setuptools wheel \
 
 COPY . .
 
-CMD ["python", "-u", "/app/handler.py"]
+CMD ["python", "-u", "/app/src/handler.py"]
