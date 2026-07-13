@@ -2,6 +2,7 @@ import base64
 import io
 import os
 import threading
+import traceback
 from typing import Any
 
 import torch
@@ -13,6 +14,21 @@ from sampling import sample
 PIPELINES: dict[str, tuple[Any, Any, Any]] = {}
 PIPELINE_LOCK = threading.Lock()
 VALID_CHECKPOINTS = {"oss_raw", "oss_turbo"}
+
+
+def _checkpoint_env(checkpoint: str) -> str:
+    return "OSS_RAW" if checkpoint == "oss_raw" else "OSS_TURBO"
+
+
+def _checkpoint_status(checkpoint: str) -> dict[str, Any]:
+    env_name = _checkpoint_env(checkpoint)
+    path = os.environ.get(env_name)
+    return {
+        "env": env_name,
+        "path": path,
+        "configured": bool(path),
+        "exists": os.path.exists(path) if path else False,
+    }
 
 
 def _bool_input(value: Any, default: bool = False) -> bool:
@@ -92,6 +108,10 @@ def handler(job):
             "cuda_available": torch.cuda.is_available(),
             "device_count": torch.cuda.device_count(),
             "loaded_checkpoints": sorted(PIPELINES),
+            "checkpoints": {
+                checkpoint: _checkpoint_status(checkpoint)
+                for checkpoint in sorted(VALID_CHECKPOINTS)
+            },
         }
 
     prompt = job_input.get("prompt")
@@ -154,4 +174,5 @@ def handler(job):
             },
         }
     except Exception as exc:
+        traceback.print_exc()
         return {"error": str(exc)}

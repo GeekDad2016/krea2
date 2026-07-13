@@ -43,6 +43,10 @@ def resolve_checkpoint_path(checkpoint):
             f"checkpoint '{checkpoint}' is not configured; set "
             f"{'OSS_RAW' if checkpoint == 'oss_raw' else 'OSS_TURBO'} to a safetensors path"
         )
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"checkpoint '{checkpoint}' path does not exist: {path}"
+        )
     return path
 
 
@@ -54,11 +58,12 @@ def _pipeline(
     dtype=torch.bfloat16,
 ):
     """Build the autoencoder, text encoder, and MMDiT, load weights, and move to GPU."""
-    ae = QwenAutoencoder()
+    ae = QwenAutoencoder(dtype=dtype)
     encoder = Qwen3VLConditioner(
         text_encoder_config.model_id,
         text_encoder_config.max_length,
         select_layers=text_encoder_config.select_layers,
+        dtype=dtype,
     )
 
     # Build on meta, load to passed device

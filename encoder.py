@@ -22,9 +22,14 @@ class Qwen3VLConditioner(torch.nn.Module):
         version: str,
         max_length: int = 512,
         select_layers: tuple[int, ...] = (2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35),
+        dtype: torch.dtype = torch.bfloat16,
     ):
         super().__init__()
-        self.qwen = Qwen3VLForConditionalGeneration.from_pretrained(version)
+        self.qwen = Qwen3VLForConditionalGeneration.from_pretrained(
+            version,
+            dtype=dtype,
+            low_cpu_mem_usage=True,
+        )
         self.tokenizer = AutoTokenizer.from_pretrained(version, max_length=max_length)
         self.processor = Qwen2TokenizerFast.from_pretrained(
             version, max_length=max_length

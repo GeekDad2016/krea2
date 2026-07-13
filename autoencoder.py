@@ -6,12 +6,12 @@ from torch import Tensor, nn
 class QwenAutoencoder(nn.Module):
     """qwen-ae-f8-16c: the Qwen-Image VAE (f8, 16 latent channels)."""
 
-    def __init__(self):
+    def __init__(self, dtype: torch.dtype = torch.bfloat16):
         super().__init__()
         from diffusers import AutoencoderKLQwenImage
 
         self.ae = AutoencoderKLQwenImage.from_pretrained(
-            "Qwen/Qwen-Image", subfolder="vae"
+            "Qwen/Qwen-Image", subfolder="vae", torch_dtype=dtype
         )
         self.compression = 8
         self.channels = 16
