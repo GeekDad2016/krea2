@@ -1,0 +1,12 @@
+.git
+.gitignore
+.venv/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+.claude/
+.hf_home/
+assets/
+docs/
+test_runpod_worker.py
