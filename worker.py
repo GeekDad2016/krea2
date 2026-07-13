@@ -7,7 +7,11 @@ from typing import Any
 
 import torch
 
-from inference import _pipeline
+from inference import (
+    CHECKPOINT_SOURCES,
+    _pipeline,
+    checkpoint_download_directory,
+)
 from sampling import sample
 
 
@@ -34,11 +38,15 @@ def _checkpoint_env(checkpoint: str) -> str:
 def _checkpoint_status(checkpoint: str) -> dict[str, Any]:
     env_name = _checkpoint_env(checkpoint)
     path = os.environ.get(env_name)
+    repo_id, filename = CHECKPOINT_SOURCES[checkpoint]
     return {
         "env": env_name,
         "path": path,
         "configured": bool(path),
         "exists": os.path.exists(path) if path else False,
+        "download_on_first_use": not (path and os.path.isfile(path)),
+        "download_path": str(checkpoint_download_directory() / filename),
+        "huggingface_repo": repo_id,
     }
 
 

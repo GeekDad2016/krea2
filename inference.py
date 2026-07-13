@@ -1,7 +1,17 @@
 import os
+from pathlib import Path
+
+# Keep large Hugging Face downloads off the container root disk when the
+# endpoint has a RunPod network volume attached.
+RUNPOD_VOLUME = Path("/runpod-volume")
+if RUNPOD_VOLUME.is_dir():
+    hf_home = Path(os.environ.get("K2_HF_HOME", RUNPOD_VOLUME / "huggingface"))
+    os.environ["HF_HOME"] = str(hf_home)
+    os.environ["HF_HUB_CACHE"] = str(hf_home / "hub")
 
 import click
 import torch
+from huggingface_hub import hf_hub_download
 from safetensors.torch import load_file
 
 from autoencoder import QwenAutoencoder
@@ -30,24 +40,39 @@ checkpoints = {
     "oss_turbo": os.environ.get("OSS_TURBO"),
 }
 
+CHECKPOINT_SOURCES = {
+    "oss_raw": ("krea/Krea-2-Raw", "raw.safetensors"),
+    "oss_turbo": ("krea/Krea-2-Turbo", "turbo.safetensors"),
+}
+
+
+def checkpoint_download_directory() -> Path:
+    """Return the persistent location used for automatic checkpoint downloads."""
+    return Path(
+        os.environ.get("K2_CHECKPOINT_DIR", "/runpod-volume/krea2-checkpoints")
+    )
+
 
 def resolve_checkpoint_path(checkpoint):
-    """Resolve a named checkpoint to the current environment variable value."""
+    """Use a configured checkpoint file or download the official checkpoint."""
     if checkpoint not in checkpoints:
         raise ValueError(
             f"unknown checkpoint '{checkpoint}', expected one of {list(checkpoints)}"
         )
-    path = os.environ.get("OSS_RAW" if checkpoint == "oss_raw" else "OSS_TURBO")
-    if not path:
-        raise ValueError(
-            f"checkpoint '{checkpoint}' is not configured; set "
-            f"{'OSS_RAW' if checkpoint == 'oss_raw' else 'OSS_TURBO'} to a safetensors path"
-        )
-    if not os.path.exists(path):
-        raise FileNotFoundError(
-            f"checkpoint '{checkpoint}' path does not exist: {path}"
-        )
-    return path
+    env_name = "OSS_RAW" if checkpoint == "oss_raw" else "OSS_TURBO"
+    configured_path = os.environ.get(env_name)
+    if configured_path and os.path.isfile(configured_path):
+        return configured_path
+
+    repo_id, filename = CHECKPOINT_SOURCES[checkpoint]
+    directory = checkpoint_download_directory()
+    directory.mkdir(parents=True, exist_ok=True)
+    return hf_hub_download(
+        repo_id=repo_id,
+        filename=filename,
+        local_dir=directory,
+        token=os.environ.get("HF_TOKEN") or None,
+    )
 
 
 def _pipeline(
