@@ -14,6 +14,7 @@ RUN apt-get update \
         libgl1 \
         libglib2.0-0 \
         python3 \
+        python3.12-dev \
         python3-pip \
         python3-venv \
     && rm -rf /var/lib/apt/lists/*
