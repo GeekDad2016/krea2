@@ -3,7 +3,11 @@ FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    HF_HOME=/root/.cache/huggingface \
+    HF_HOME=/runpod-volume/huggingface \
+    HF_HUB_CACHE=/runpod-volume/huggingface/hub \
+    TRANSFORMERS_CACHE=/runpod-volume/huggingface/transformers \
+    XDG_CACHE_HOME=/runpod-volume/.cache \
+    TMPDIR=/runpod-volume/tmp \
     PYTHONPATH=/app
 
 RUN apt-get update \
@@ -16,6 +20,8 @@ RUN apt-get update \
         python3-pip \
         python3-venv \
     && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /runpod-volume/huggingface /runpod-volume/tmp
 
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"

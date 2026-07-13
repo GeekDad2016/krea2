@@ -16,6 +16,17 @@ PIPELINE_LOCK = threading.Lock()
 VALID_CHECKPOINTS = {"oss_raw", "oss_turbo"}
 
 
+for path in (
+    os.environ.get("HF_HOME"),
+    os.environ.get("HF_HUB_CACHE"),
+    os.environ.get("TRANSFORMERS_CACHE"),
+    os.environ.get("XDG_CACHE_HOME"),
+    os.environ.get("TMPDIR"),
+):
+    if path:
+        os.makedirs(path, exist_ok=True)
+
+
 def _checkpoint_env(checkpoint: str) -> str:
     return "OSS_RAW" if checkpoint == "oss_raw" else "OSS_TURBO"
 
@@ -108,6 +119,12 @@ def handler(job):
             "cuda_available": torch.cuda.is_available(),
             "device_count": torch.cuda.device_count(),
             "loaded_checkpoints": sorted(PIPELINES),
+            "cache": {
+                "HF_HOME": os.environ.get("HF_HOME"),
+                "HF_HUB_CACHE": os.environ.get("HF_HUB_CACHE"),
+                "TRANSFORMERS_CACHE": os.environ.get("TRANSFORMERS_CACHE"),
+                "TMPDIR": os.environ.get("TMPDIR"),
+            },
             "checkpoints": {
                 checkpoint: _checkpoint_status(checkpoint)
                 for checkpoint in sorted(VALID_CHECKPOINTS)
