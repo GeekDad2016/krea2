@@ -158,5 +158,6 @@ def handler(job):
         return {"error": str(exc)}
 
 
-if __name__ == "__main__":
-    runpod.serverless.start({"handler": handler})
+# Keep this call at module top level so RunPod's GitHub integration detects
+# the queue worker entrypoint before it builds the Docker image.
+runpod.serverless.start({"handler": handler})
