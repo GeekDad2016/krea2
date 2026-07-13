@@ -29,7 +29,7 @@ The two models are designed to work together. You train LoRAs on RAW and apply t
 uv sync
 ```
 
-Both [Raw](https://huggingface.co/krea/Krea-2-Raw) and [Turbo](https://huggingface.co/krea/Krea-2-Turbo) safetensor files are available on Hugging Face. After downloading the checkpoints, set the `OSS_RAW` and `OSS_TURBO` environment variables to the paths of the downloaded files.
+Both [Raw](https://huggingface.co/krea/Krea-2-Raw) and [Turbo](https://huggingface.co/krea/Krea-2-Turbo) safetensor files are available on Hugging Face. You can set `OSS_RAW` and `OSS_TURBO` to use already-downloaded checkpoint files. When they are unset or their paths do not exist, the RunPod worker downloads the official checkpoint automatically and stores it in `K2_CHECKPOINT_DIR`.
 
 ```bash
 export OSS_RAW=...
@@ -103,15 +103,20 @@ docker build -t your-dockerhub-user/krea-2-runpod:latest .
 docker push your-dockerhub-user/krea-2-runpod:latest
 ```
 
-Create a RunPod Serverless endpoint from that image and set the checkpoint
-environment variables to paths available inside the container:
+Create a RunPod Serverless endpoint from that image. The worker automatically
+downloads the selected checkpoint from Hugging Face on its first generation
+request and persists it on the RunPod volume. Set:
 
 ```bash
-OSS_TURBO=/runpod-volume/Krea-2-Turbo.safetensors
-OSS_RAW=/runpod-volume/Krea-2-Raw.safetensors
 K2_CHECKPOINT=oss_turbo
 K2_MAX_IMAGES=1
+K2_CHECKPOINT_DIR=/runpod-volume/krea2-checkpoints
 ```
+
+`OSS_TURBO` and `OSS_RAW` are optional overrides for checkpoint files you
+already uploaded. If Hugging Face requires authentication for your account,
+also set `HF_TOKEN` to a Hugging Face read token. The Turbo checkpoint is about
+26.3 GB, so ensure the attached volume has sufficient free space.
 
 The worker accepts this input shape:
 

@@ -1,7 +1,9 @@
 import os
+from pathlib import Path
 
 import click
 import torch
+from huggingface_hub import hf_hub_download
 from safetensors.torch import load_file
 
 from autoencoder import QwenAutoencoder
@@ -30,24 +32,37 @@ checkpoints = {
     "oss_turbo": os.environ.get("OSS_TURBO"),
 }
 
+CHECKPOINT_SOURCES = {
+    "oss_raw": ("krea/Krea-2-Raw", "raw.safetensors"),
+    "oss_turbo": ("krea/Krea-2-Turbo", "turbo.safetensors"),
+}
+
+
+def _checkpoint_directory() -> Path:
+    """Return a persistent directory for downloaded Krea checkpoint weights."""
+    return Path(os.environ.get("K2_CHECKPOINT_DIR", "/runpod-volume/krea2-checkpoints"))
+
 
 def resolve_checkpoint_path(checkpoint):
-    """Resolve a named checkpoint to the current environment variable value."""
+    """Use a configured checkpoint path or download the official checkpoint once."""
     if checkpoint not in checkpoints:
         raise ValueError(
             f"unknown checkpoint '{checkpoint}', expected one of {list(checkpoints)}"
         )
-    path = os.environ.get("OSS_RAW" if checkpoint == "oss_raw" else "OSS_TURBO")
-    if not path:
-        raise ValueError(
-            f"checkpoint '{checkpoint}' is not configured; set "
-            f"{'OSS_RAW' if checkpoint == 'oss_raw' else 'OSS_TURBO'} to a safetensors path"
-        )
-    if not os.path.exists(path):
-        raise FileNotFoundError(
-            f"checkpoint '{checkpoint}' path does not exist: {path}"
-        )
-    return path
+    env_name = "OSS_RAW" if checkpoint == "oss_raw" else "OSS_TURBO"
+    configured_path = os.environ.get(env_name)
+    if configured_path and os.path.isfile(configured_path):
+        return configured_path
+
+    repo_id, filename = CHECKPOINT_SOURCES[checkpoint]
+    checkpoint_dir = _checkpoint_directory()
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    return hf_hub_download(
+        repo_id=repo_id,
+        filename=filename,
+        local_dir=checkpoint_dir,
+        token=os.environ.get("HF_TOKEN") or None,
+    )
 
 
 def _pipeline(
