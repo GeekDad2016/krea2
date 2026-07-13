@@ -92,9 +92,9 @@ You can run our open source models on the following platforms.
 
 ## RunPod Serverless
 
-This repo includes RunPod Serverless worker entrypoints in `handler.py` and
-`src/handler.py`, shared worker logic in `worker.py`, a GPU-ready `Dockerfile`,
-and a post-deploy test client in `test_runpod_worker.py`.
+This repo includes a RunPod Serverless worker entrypoint in `src/handler.py`,
+shared worker logic in `worker.py`, a GPU-ready `Dockerfile`, and a post-deploy
+test client in `test_runpod_worker.py`.
 
 Build and push the image:
 

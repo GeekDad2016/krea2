@@ -20,12 +20,13 @@ RUN apt-get update \
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
 
-WORKDIR /app
+WORKDIR /
 
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip setuptools wheel \
     && pip install -r requirements.txt
 
-COPY . .
+COPY . /app/
+COPY src/handler.py /handler.py
 
-CMD ["python", "-u", "/app/src/handler.py"]
+CMD ["python", "-u", "/handler.py"]
